@@ -1,0 +1,62 @@
+#pragma once
+#include "stdafx.h"
+#include "Catalan.h"
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+using namespace std;
+	
+	Catalan::Catalan()
+	{
+		
+	}
+
+	Catalan::Catalan(int n)
+	{
+		CatalanCalc(n);
+	}
+
+	int Catalan::CatalanCalc(int sNum)
+	{
+	
+		// base case
+		if (sNum <= 1) return 1;
+
+		// catalan(n) is sum of catalan(i)*catalan(n-i-1)
+		//given that catalan seq number is initial * catalan(n) - i for n greater than or equal to 0
+		int res = 0;
+		for (int i = 0; i < sNum; ++i)
+			//sNum - i - 1 is the catalan(n) - i
+			res += CatalanCalc(i)*CatalanCalc(sNum - i - 1);
+
+		return res;
+	}
+
+
+	int main(int argc , char* argv[])
+	{	
+		Catalan c;
+		if (argc > 1)
+		{
+			//i = 1 is the .exe input which doesn't need to be considered
+			for (int i = 1; i < argc; i++)
+			{
+				int convert = atoi(argv[i]);
+				cout << "Catalan sequence number for: " << argv[i] << " is: " << c.CatalanCalc(convert) << endl;
+
+			}
+
+		}
+
+		else
+		{
+			int catNum;
+			cout << "Please input a number for the Catalan sequence" << endl;
+			cin >> catNum;
+			cout << "Catalan sequence number for " << catNum << " is " << c.CatalanCalc(catNum) << endl;
+		}
+
+		system("pause");
+
+		return 0;
+	}
