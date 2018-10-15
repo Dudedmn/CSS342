@@ -1,0 +1,116 @@
+/*
+TimeMachine cpp, driver for TimeSpan cpp
+Author: Daniel Yans
+
+*/
+#include "stdafx.h"
+#include <iostream>
+#include "TimeSpan.h"
+
+using namespace std;
+
+
+int main()
+{
+	
+	TimeSpan dur1(77.4, 15, 6), dur2(127.86), dur3(8, -23, 0), dur4(0, 0, 0);
+	TimeSpan dur5(-3, 73, 2), dur6(7, 35, 120), dur7, dur8, dur9(127.86), dur10(-2.1, -5.3), dur11;
+	//Addition
+	dur7 = dur1 + dur3;
+	//Subtraction
+	dur11 = dur1 - dur2;
+	//Printing out each TimeSpan obj
+	cout << "dur1: " << dur1 << endl;
+	//Checking unary negation
+	dur1 = -dur1;
+	cout << "neg dur1: " << dur1 << endl;
+	cout << "dur2: " << dur2 << endl;
+	cout << "dur3: " << dur3 << endl;
+	cout << "dur4: " << dur4 << endl;
+	cout << "dur5: " << dur5 << endl;
+	cout << "dur6: " << dur6 << endl;
+	cout << "dur7: " << dur7 << endl;
+	cout << "dur8: " << dur8 << endl;
+	cout << "dur9: " << dur9 << endl;
+	cout << "dur10: " << dur10 << endl;
+	cout << "dur11: " << dur11 << endl;
+	//Testing operators
+	dur7 += dur3;
+	dur6 -= dur2;
+	dur2 -= dur1;
+	//cout << "dur2: " << dur2 << endl;
+	dur4 -= dur2;
+	dur11 = -dur1;
+	cout << "dur11: " << dur11 << endl;
+	cout << "dur6: " << dur6 << endl;
+	cout << "dur3: " << dur3 << endl;
+	cout << "dur7: " << dur7 << endl;
+	cout << "dur2: " << dur2 << endl;
+	cout << "dur4: " << dur4 << endl;
+	dur4 += dur2;
+	cout << "dur4: " << dur4 << endl;
+	dur2 = dur9; 
+	cout << "dur2: " << dur2 << endl;
+	//Testing input stream, note that inputs do not allow truly negative times
+	//From talking in class, inputs have the option to flip a time or to reinput it if it's negative
+	cin >> dur8;
+	cout << "dur8: " << dur8 << endl;
+	cin >> dur9;
+	cout << "dur9: " << dur9 << endl;
+
+	//Checking boolean operators
+	if (dur3 == dur6)
+	{	
+		cout << "Durations are equal." << endl;
+		cout << "dur3: " << dur3 << endl;
+		cout << "dur8: " << dur8 << endl;
+	}
+
+	else
+	{
+		cout << "Durations are different." << endl;
+		cout << "dur3: " << dur3 << endl;
+		cout << "dur8: " << dur8 << endl;
+	}
+
+	if (dur2 != dur9)
+	{
+		cout << "Durations are different." << endl;
+		cout << "dur2: " << dur2 << endl;
+		cout << "dur9: " << dur9 << endl;
+	}
+
+	else
+	{	
+		cout << "Durations are same." << endl;
+		cout << "dur2: " << dur2 << endl;
+		cout << "dur9: " << dur9 << endl;
+	}
+
+	//Pauses console
+	system("pause");
+
+	//Test cases from annoucement
+	//TimeSpan dur1(3, 123, 7658);
+	//cout << "Output should be : 7, 10, 38 : " << dur1 << endl;
+
+	//TimeSpan dur2(7, -85);
+	//cout << "Output should be : 0, 5, 35 : " << dur2 << endl;
+
+	//TimeSpan dur3(12343);
+	//cout << "Output should be : 3, 25, 43 : " << dur3 << endl;
+
+	////Unary negation 
+	//TimeSpan dur4(-8, 23, 0), dur5;
+	//dur5 = -dur4;
+	//cout << "Output should be : -7, -37, 0 : " << dur4 << endl;
+	//cout << "Output should be : 7, 37, 0 : " << dur5 << endl;
+
+	////sub
+	//TimeSpan dur50(77, 15, 6), dur51(8, -25, 0), dur52, dur53, dur54, dur55(-3, 75, 2), dur56(5, 1, 10), dur57(1, 2, 3), dur58(1, 3, 2), dur59;
+	//dur52 = dur50 + dur51;
+	//dur54 = dur55 - dur51;
+	//cout << "Output should be : -9, -19, -58 : " << dur54 << endl;
+	return 0;
+	
+}
