@@ -1,0 +1,196 @@
+#pragma once
+#include "stdafx.h"
+#include "GreedyRobot.h"
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+//Empty constructor
+GreedyRobot::GreedyRobot()
+{
+	PathFinder();
+}
+
+//Constructors with determined values
+GreedyRobot::GreedyRobot(int x1, int y1, int x2, int y2)
+{
+	ResetPath();
+	FindPath(x1, y1, x2, y2, "");
+	PrintPath();
+}
+
+//Method to caluclate shortest distance
+void GreedyRobot::CalcShortestDistance(int initialX, int initialY, int targetX, int targetY)
+{
+	shortestPossibleDistance = abs(initialX - targetX) + abs(initialY - targetY);
+
+}
+
+//Method to reset the strings in the vector
+void GreedyRobot::ResetPath()
+{
+	shortestPossibleDistance = 0;
+	notZeroPaths = false;
+	this->count = 0;
+	for (int i = 0; i < stringStore.size(); i++)
+	{
+		stringStore.clear();
+	}
+}
+
+//Input for the path
+void GreedyRobot::PathFinder()
+{
+	//Clears prior path findings
+	ResetPath();
+
+	//Asks for input, where x1 = initial x and y1 = target y
+	int x1, x2, y1, y2;
+	cout << "Please input 4 ints for calculating the path" << endl;
+	cin >> x1 >> y1 >> x2 >> y2;
+	FindPath(x1, y1, x2, y2, "");
+	CalcShortestDistance(x1, y1, x2, y2);
+	PrintPath();
+
+
+}
+
+//Checks whether the path string has been found before or not
+bool GreedyRobot::CheckPath(string pathCheck)
+{
+	for (int i = 0; i < stringStore.size(); i++)
+	{
+		if (stringStore[i].compare(pathCheck) == 0)
+			return false;
+	}
+
+	return true;
+
+}
+
+//Finds the pathing between two points with robot restrictions
+void GreedyRobot::FindPath(int posX, int posY, int tarX, int tarY, string path)
+{
+	//Checks if the target and position is initially the same
+
+	if (tarX == posX && tarY == posY)
+	{
+		//Checks whether a string is unique or not
+		if (CheckPath(path))
+		{
+			//Vector which stores a unique string path
+			stringStore.push_back(path);
+			//Increment global count var or unique path #
+			if (notZeroPaths)
+			{
+				this->count++;
+
+			}
+			//Base case
+			return;
+		}
+
+	}
+	else {
+
+		notZeroPaths = true;
+
+
+		//Checks if the target y coord is greater than position
+		//Conditionals check if last two letters are the same to implement direction restriction
+		if (tarY > posY && path.length() < 2 || tarY > posY && (path.length() >= 2 && (path.substr(path.length() - 2, path.length()) != "NN")))
+		{
+			//Recursive looping	
+			FindPath(posX, posY + 1, tarX, tarY, path + "N");
+
+		}
+		//Checks if the target y coord is less than position
+		if (tarY < posY && path.length() < 2 || tarY < posY && (path.length() >= 2 && (path.substr(path.length() - 2, path.length()) != "SS")))
+		{
+
+			FindPath(posX, posY - 1, tarX, tarY, path + "S");
+
+		}
+		//Checks if the target x coord is greater than position
+		if (tarX > posX && path.length() < 2 || tarX > posX && (path.length() >= 2 && (path.substr(path.length() - 2, path.length()) != "EE")))
+		{
+
+			FindPath(posX + 1, posY, tarX, tarY, path + "E");
+
+		}
+		//Checks if the target x coord is less than position
+		if (tarX < posX && path.length() < 2 || tarX < posX && (path.length() >= 2 && (path.substr(path.length() - 2, path.length()) != "WW")))
+		{
+
+			FindPath(posX - 1, posY, tarX, tarY, path + "W");
+
+		}
+	}
+}
+
+//Prints the strings held in the vector
+void GreedyRobot::PrintPath()
+{
+	for (int i = 0; i < stringStore.size(); i++)
+	{
+		cout << stringStore[i] << endl;
+	}
+
+	if (count > 0)
+	{
+		cout << "Number of unique paths: " << count << endl;
+	}
+
+	else
+	{
+		cout << "No paths via shortest distance " << endl;
+	}
+
+	cout << "Shortest possible distance: " << shortestPossibleDistance << endl;
+}
+
+
+int main()
+{
+	GreedyRobot t1;
+
+	//Test cases
+
+	//Same position
+	t1.ResetPath();
+	t1.FindPath(0, 0, 0, 0, "");
+	t1.PrintPath();
+
+	//Diagonals
+	t1.ResetPath();
+	t1.FindPath(0, 0, 1, 1, "");
+	t1.CalcShortestDistance(0, 0, 1, 1);
+	t1.PrintPath();
+
+	t1.ResetPath();
+	t1.FindPath(0, 0, -1, 1, "");
+	t1.CalcShortestDistance(0, 0, -1, 1);
+	t1.PrintPath();
+
+	t1.ResetPath();
+	t1.FindPath(0, 0, 1, -1, "");
+	t1.CalcShortestDistance(0, 0, 1, -1);
+	t1.PrintPath();
+
+	t1.ResetPath();
+	t1.FindPath(0, 0, -1, -1, "");
+	t1.CalcShortestDistance(0, 0, -1, -1);
+	t1.PrintPath();
+
+	//Impossible
+	t1.ResetPath();
+	t1.FindPath(0, 0, 0, 5, "");
+	t1.CalcShortestDistance(0, 0, 0, 5);
+	t1.PrintPath();
+
+	system("pause");
+	return 0;
+}
+
