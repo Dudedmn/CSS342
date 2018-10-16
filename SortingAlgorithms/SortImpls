@@ -1,0 +1,744 @@
+/*
+@author - Daniel Yan
+@date - May 21st, 2018
+CSS 342 - Lab 4 - Sorting Algorithm Runtime Comparisons
+
+*/
+#pragma once
+#include "stdafx.h"
+#include "SortImpls.h"
+#include <iostream>
+//Namely for GetTickCount()
+#include <windows.h>
+
+
+using namespace std;
+
+//Empty constructor
+SortImpls::SortImpls()
+{
+	
+}
+
+//Pointer swap for proper swapping
+void SortImpls::Swap(int *x, int *y)
+{
+	int temp = *x;
+	*x = *y;
+	*y = temp;
+}
+
+//Simple bubble sort with method swap
+void SortImpls::BubbleSort(vector<int> &items, int start, int size)
+{
+	int i, j;
+	for (i = start; i <= size; i++)
+	{	
+		//<= is used to compensate for size - 1
+		for (j = start; j <= (size - start - 1); j++)
+		{
+			if (items[j] > items[j + 1])
+				Swap(&items[j], &items[j + 1]);
+		}
+	} 
+}
+
+//Insertion sort comparing against a key
+void SortImpls::InsertionSort(vector<int> &items, int start, int size)
+{
+	//Key is a temp val to compare element value against
+	int i, key, j;
+	//<= is used to compenseate for size - 1
+	for (i = 1; i <= size; i++)
+	{
+		key = items[i];
+		j = i - 1;
+
+		while (j >= start && items[j] > key)
+		{
+			items[j + 1] = items[j];
+			j = j - 1;
+		}
+		items[j + 1] = key;
+	}
+}
+
+void SortImpls::Merge(vector<int> &arr, int start, int mid, int end)
+{
+	
+	 int i, j, k;
+	 //Left hand side
+    int leftPortion = mid - start + 1;
+	//Right hand side
+    int rightPortion =  end - mid;
+ 
+    // create temp arrays 
+	vector<int> leftSide(leftPortion); 
+	vector<int> rightSide(rightPortion); 
+
+	//Copy data to temp arrays 
+	for (i = 0; i < leftPortion; i++)
+		leftSide[i] = arr[start + i];
+	for (j = 0; j < rightPortion; j++)
+		rightSide[j] = arr[mid + 1 + j];
+
+	// Merge the temp arrays back into arr[l..r]
+	//Indexes are to keep track of which sides are greater
+
+	i = 0; // Initial index of first subarray
+	j = 0; // Initial index of second subarray
+	k = start; // Initial index of merged subarray
+	while (i < leftPortion && j < rightPortion)
+	{
+		if (leftSide[i] <= rightSide[j])
+		{
+			//Increments index if left hand is smaller than right hand 
+			//and sets arr[k] = leftSide[k]
+			arr[k++] = leftSide[i++];
+			
+		}
+		else
+		{
+			arr[k++] = rightSide[j++];
+			
+		}
+		
+	}
+
+	//Copy the remaining elements of leftSide
+	while (i < leftPortion)
+	{
+		arr[k++] = leftSide[i++];
+	}
+
+	//Copy the remaining elements of rightSide
+	while (j < rightPortion)
+	{
+		arr[k++] = rightSide[j++];
+	}
+	
+	
+}
+
+//Recursive Merge Sorting
+void SortImpls::MergeSort(vector<int> &arr, int leftSide, int rightSide)
+{
+	
+	if (leftSide < rightSide)
+    {
+        // Keeps in mind overflow, equivalent to (leftSide+rightSide) / 2
+        int mid = leftSide+(rightSide-leftSide)/2;
+ 
+        // Sort first and second halves
+        MergeSort(arr, leftSide, mid);
+        MergeSort(arr, mid+1, rightSide);
+ 
+        Merge(arr, leftSide, mid, rightSide);
+    }
+	
+}
+
+//Specified min function to return which int is smaller
+int SortImpls::Min(int x, int y)
+{
+	return (x < y) ? x : y;
+}
+
+//MyVersion
+//void SortImpls::IterativeMergeSort(vector<int> &arr, int low, int high)
+//{
+//	
+//	//Sets temporary array to equal arr
+//	vector<int> temp = arr;
+//	// Divide the array into width blocks
+//	for (int width = 1; width <= high - low; width *= 2 )
+//	{
+//		// for width = 1, i = 0, 2, 4, 6, 8
+//		// for width = 2, i = 0, 4, 8
+//		// for width = 4, i = 0, 8
+//		// Ensuring that width portions are properly chunked
+//		for (int i = low; i < high; i += 2 * width)
+//		{	
+//			//Regards the left hand side
+//			int start = i;
+//			//Regards the right hand side, -1 for true mid
+//			int mid = i + width - 1;
+//			//Note this endpoint is comparing whether right hand side width
+//			//or the end of the vector size is smaller
+//			int end = Min(i + 2 * width - 1, high);
+//
+//			IterativeMerge(arr, temp, start, mid, end);
+//		}
+//	}
+//}
+
+//Emily's Version
+//Merges using temporary array to copy between original and temp
+void SortImpls::IterativeMerge(vector<int> &arr, vector<int> &temp, int start, int mid, int end)
+{
+
+	//Indices to separate the array into left, mid, and right portions
+	int k = start, i = start, j = mid + 1;
+
+	// Loop until left index and right index catches to endpoint
+	//Mid is endpoint for left hand side and end is midpoint for right hand side
+	while (i <= mid && j <= end)
+	{
+		//While the left hand side has elements smaller than right, make temp[k] = arr[i]
+		if (arr[i] < arr[j])
+			//Increment each index as needed
+			temp[k++] = arr[i++];
+		else
+			//If the right hand side elements are smaller, make temp[k] = arr[j]
+			temp[k++] = arr[j++];
+	}
+
+	// Copy remaining elements, ensure mid is not greater than size
+	while (i <= mid && mid < arr.size())
+		temp[k++] = arr[i++];
+
+	//Second half doesn't need to be copied
+
+	// Copy sorted temp array to original array
+	for (int i = start; i <= end; i++)
+		arr[i] = temp[i];
+
+}
+
+//Emily's Version
+void SortImpls::BottomUpMerge(vector<int>& arr, int iLeft, int iRight, int iEnd, vector<int>& temp)
+{
+	int i = iLeft, j = iRight;
+	// While there are elements in the left or right runs...
+	for (int k = iLeft; k < iEnd; k++)
+	{
+		// If left run head exists and is <= existing right run head.
+		if (i < iRight && (j >= iEnd || arr[i] <= arr[j]))
+		{
+			temp[k] = arr[i];
+			i = i + 1;
+		}
+		else
+		{
+			temp[k] = arr[j];
+			j = j + 1;
+		}
+	}
+}
+
+/* Iterative mergesort function to sort arr[0...n-1] */
+void SortImpls::IterativeMergeSort(vector<int>& arr, int firstIndex, int lastIndex)
+{
+	// Creates a temporary vector to switch values between with the same size of the original vector.
+	vector<int> temp(lastIndex + 1);
+
+	// Each 1-element run in A is already "sorted".
+	// Make successively longer sorted runs of length 2, 4, 8, 16... until whole array is sorted.
+	for (int i = 1; i < lastIndex + 1; i = 2 * i)
+	{
+		// Array A is full of runs of length width.
+		for (int j = 0; j < lastIndex + 1; j = j + 2 * i)
+		{
+			// Merge two runs: A[i:i+width-1] and A[i+width:i+2*width-1] to B[]
+			// or copy A[i:n-1] to B[] ( if(i+width >= n) )
+			BottomUpMerge(arr, j, min(j + i, lastIndex + 1), min(j + 2 * i, lastIndex + 1), temp);
+		}
+		// Now work array B is full of runs of length 2*width.
+		// Copy array B to array A for next iteration.
+		// A more efficient implementation would swap the roles of A and B.
+		arr = temp;
+		// Now array A is full of runs of length 2*width.
+	}
+}
+
+//Partioning method for QuickSort, functions similar to iterativeMergeSort
+int SortImpls::Partition(vector<int> &arr, int low, int high)
+{
+	
+	int pivot = arr[high];    //Pivot, right hand most element
+    int i = (low - 1);  // Index of smaller element
+ 
+	//arr[i] are elements lower than pivot
+	//arr[j] are elements greater than pivot
+
+    for (int j = low; j <= high- 1; j++)
+    {
+        // If current element is smaller than or
+        // equal to pivot
+        if (arr[j] <= pivot)
+        {
+            i++;    // increment index of smaller element
+            Swap(&arr[i], &arr[j]);
+        }
+    }
+	//Swaps pivot index into the right place
+    Swap(&arr[i + 1], &arr[high]);
+
+	//Returns pivot index
+    return (i + 1);
+	
+	
+}
+
+void SortImpls::QuickSort(vector<int> &arr, int low, int high)
+{
+	
+	if (low < high)
+		{
+				// pi is partitioning index, arr[p] is now
+				 // at right place 
+			int pi = Partition(arr, low, high);
+
+			// Separately sort elements before
+			// partition and after partition
+			QuickSort(arr, low, pi - 1);
+			QuickSort(arr, pi + 1, high);
+		}
+	
+}
+	
+
+
+void SortImpls::ShellSort(vector<int> &arr, int start, int end)
+{
+	
+	// Start with a big gap, then reduce the gap
+    for (int gap = end/2; gap > 0; gap /= 2)
+    {
+        // Do a gapped insertion sort for this gap size.
+        // The first gap elements arr[0..gap-1] are already in gapped order
+        // keep adding one more element until the entire array is
+        // gap sorted 
+        for (int i = gap; i <= end; i += 1)
+        {
+            // add arr[i] to the elements that have been gap sorted
+            // save arr[i] in temp and make a hole at position i
+            int temp = arr[i];
+ 
+            // shift earlier gap-sorted elements up until the correct 
+            // location for arr[i] is found
+            int j;            
+            for (j = i; j >= gap && arr[j - gap] > temp; j -= gap)
+                arr[j] = arr[j - gap];
+             
+            //  put temp (the original arr[i]) in its correct location
+            arr[j] = temp;
+        }
+    }
+	
+}
+
+//Initializes the array with a dependent on pool 
+void SortImpls::InitArray(vector<int> &array, int randMax)
+{
+	if (randMax < 0)
+	{
+		return;
+	}
+	vector<int> pool(randMax);
+	for (int i = 0; i < randMax; i++)
+	{
+		pool[i] = i;
+	}
+	int spot;
+	for (int i = 0; i < randMax; i++)
+	{
+		spot = rand() % (pool.size());
+		array[i] = pool[spot];
+		pool.erase(pool.begin() + spot);
+	}
+}
+
+//Prints each element in the array
+void SortImpls::PrintArrayDetails(const vector<int> &array, string name)
+{
+	int size = array.size();
+	for (int i = 0; i < size; i++)
+		cout << name << "[" << i << "] = " << array[i] << endl;
+}
+
+
+// Function to calculate elapsed time if using gettimeofday (linux)
+// int elapsed( timeval &startTime, timeval &endTime )
+// {
+// return ( endTime.tv_sec - startTime.tv_sec ) * 1000000
+// + ( endTime.tv_usec - startTime.tv_usec );
+// }
+
+////Quick main test (non cmd line vector test)
+//int main()
+//{
+//	SortImpls a;
+//	cout << "Input size of for vector " << endl;
+//	int size;
+//	cin >> size;
+//	vector<int> items(size);
+//	srand(1);
+//	a.InitArray(items, size);
+//	a.PrintArrayDetails(items, "items");
+//	a.IterativeMergeSort(items, 0, size - 1);
+//	a.PrintArrayDetails(items, "items");
+//	return 0;
+//
+//}
+
+//Main driver modified 
+int main(int argc, char *argv[])
+{
+	SortImpls a, b, c, d, e;
+	int size = 0;
+	string sort_name = "";
+	bool printOut = true;
+	if ((argc != 3) && (argc != 4))
+	{
+		cerr << "Usage: Sorter SORT_TYPE ARRAY_SIZE [YES|NO]" << endl;
+		return -1;
+	}
+	sort_name = string(argv[1]);
+	cout << sort_name << endl;
+	size = atoi(argv[2]);
+	cout << "size: " << size << endl;
+	if (size <= 0)
+	{
+		cerr << "Array size must be positive" << endl;
+		return -1;
+	}
+	if (argc == 4)
+	{
+		string printArr = string(argv[3]);
+		if (printArr == "NO")
+		{
+			printOut = false;
+		}
+		else if (printArr == "YES")
+		{
+			printOut = true;
+		}
+		else
+		{
+			cerr << "Usage: Sorter SORT_TYPE ARRAY_SIZE [YES|NO]" << endl;
+			return -1;
+		}
+	}
+	//Resets the random seed
+	srand(1);
+
+	//5 Vectors are used to have 5 different sorting runtimes
+	vector<int> items(size), items2(size), items3(size), items4(size), items5(size);
+	
+	a.InitArray(items, size);
+	b.InitArray(items2, size);
+	c.InitArray(items3, size);
+	d.InitArray(items4, size);
+	e.InitArray(items5, size);
+
+	if (printOut)
+	{
+		cout << "Initial:" << endl;
+		a.PrintArrayDetails(items, string("items"));
+	}
+	// GetTickCount is windows specific.
+	// For linux use gettimeofday. As shown::
+	// struct timeval startTime, endTime;
+	// gettimeofday(&startTime, 0);
+
+	//int begin = GetTickCount();
+	
+	//
+	// PLACE YOUR CODE HERE
+	// ...Determine which sort to call on the array
+	// ...The code below only looks for QuickSort
+	// Other Signatures:
+	// BubbleSort(items, 0, size - 1)
+	// InsertionSort(items, 0, size – 1)
+	// MergeSort(items, 0, size – 1)
+	// IterativeMergeSort(items, 0, size – 1)
+	// ShellSort(items, 0, size – 1)
+	// PLACE YOUR CODE HERE
+
+	//If statements to match string input
+	if (sort_name == "BubbleSort")
+	{
+		//Repeated 5 GetTickCount() for each sort
+		int begin = GetTickCount();
+		int totalTime = 0;
+		double average = 0.0;
+		a.BubbleSort(items, 0, size - 1);
+		int end = GetTickCount();
+		int elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		b.BubbleSort(items2, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		c.BubbleSort(items3, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		d.BubbleSort(items4, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		e.BubbleSort(items5, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		//Tells average and total runtime in (ms)
+		cout << "Total time (ms) for 5 runs: " << totalTime << endl;
+		average = totalTime / 5.0;
+		cout << "Average time (ms) for 5 runs: " << average << endl;
+
+	}
+
+	if (sort_name == "InsertionSort")
+	{
+		int begin = GetTickCount();
+		int totalTime = 0;
+		double average = 0.0;
+		a.InsertionSort(items, 0, size - 1);
+		int end = GetTickCount();
+		int elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		b.InsertionSort(items2, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		c.InsertionSort(items3, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		d.InsertionSort(items4, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		e.InsertionSort(items5, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		cout << "Total time (ms) for 5 runs: " << totalTime << endl;
+		average = totalTime / 5.0;
+		cout << "Average time (ms) for 5 runs: " << average << endl;
+	}
+
+	if (sort_name == "MergeSort")
+	{
+		int begin = GetTickCount();
+		int totalTime = 0;
+		double average = 0.0;
+		a.MergeSort(items, 0, size - 1);
+		int end = GetTickCount();
+		int elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		b.MergeSort(items2, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		c.MergeSort(items3, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		d.MergeSort(items4, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		e.MergeSort(items5, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		cout << "Total time (ms) for 5 runs: " << totalTime << endl;
+		average = totalTime / 5.0;
+		cout << "Average time (ms) for 5 runs: " << average << endl;
+	}
+
+	if (sort_name == "IterativeMergeSort")
+	{	
+
+		int begin = GetTickCount();
+		int totalTime = 0;
+		double average = 0.0;
+		a.IterativeMergeSort(items, 0, size - 1);
+		int end = GetTickCount();
+		int elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		b.IterativeMergeSort(items2, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		c.IterativeMergeSort(items3, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		d.IterativeMergeSort(items4, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		e.IterativeMergeSort(items5, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		cout << "Total time (ms) for 5 runs: " << totalTime << endl;
+		average = totalTime / 5.0;
+		cout << "Average time (ms) for 5 runs: " << average << endl;
+	}
+
+	if (sort_name == "QuickSort")
+	{
+		int begin = GetTickCount();
+		int totalTime = 0;
+		double average = 0.0;
+		a.QuickSort(items, 0, size - 1);
+		int end = GetTickCount();
+		int elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		b.QuickSort(items2, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		c.QuickSort(items3, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		d.QuickSort(items4, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		e.QuickSort(items5, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		cout << "Total time (ms) for 5 runs: " << totalTime << endl;
+		average = totalTime / 5.0;
+		cout << "Average time (ms) for 5 runs: " << average << endl;
+	}
+
+	if (sort_name == "ShellSort")
+	{
+		int begin = GetTickCount();
+		int totalTime = 0;
+		double average = 0.0;
+		a.ShellSort(items, 0, size - 1);
+		int end = GetTickCount();
+		int elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		b.ShellSort(items2, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		c.ShellSort(items3, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		d.ShellSort(items4, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		begin = GetTickCount();
+		e.ShellSort(items5, 0, size - 1);
+		end = GetTickCount();
+		elapsed_secs = end - begin;
+		cout << "Time (ms): " << elapsed_secs << endl;
+		totalTime += elapsed_secs;
+
+		cout << "Total time (ms) for 5 runs: " << totalTime << endl;
+		average = totalTime / 5.0;
+		cout << "Average time (ms) for 5 runs: " << average << endl;
+	}
+
+	int end = GetTickCount();
+	// Linux timer:
+	// gettimeofday(&endTime, 0);
+	if (printOut)
+	{
+		cout << "Sorted:" << endl;
+		a.PrintArrayDetails(items, string("item"));
+	}
+	/*int elapsed_secs = end - begin;
+	cout << "Time (ms): " << elapsed_secs << endl;*/
+	/*for (int i = 0; i < size; i++)
+	{
+		cout << items[i] << endl;
+	}*/
+	system("pause");
+	return 0;
+}
