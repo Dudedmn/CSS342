@@ -1,0 +1,569 @@
+/*
+@author - Daniel Yan
+@date - May 27th
+
+Account class which holds all account information
+*/
+#pragma once
+#include <string>
+#include <vector>
+#include <queue>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+
+
+
+using namespace std;
+
+class Account
+{
+
+
+public:
+	Account();
+	~Account();
+	Account(string firstName, string lastName, int bankID, vector<string> &);
+	bool CheckID(int bankID) const;
+	bool ChangeFund(int bankID, int amount);
+//	bool CustomSort(const vector<string> &lhs, const vector<string> &rhs);
+	string DisplayFund(int bankID);
+	string PrintFundVector(int fundID);
+
+	//Getters
+	int getBankID() const;
+	string getAccountDetails() const;
+
+	//Needs work
+	string getFund(int bankID) const;
+	string getSingleFund(int bankID) const;
+	string getAllFund(int bankID) const;
+
+	//Public vector as private vectors cannot be modified directly due to qualified const dropping through reference
+	vector<string> fTransactions;
+
+private:
+	string firstName, lastName, errorOutput;
+	int bankID, mM, pMM, lTB, sTB, fIF, cVF, gEF, gIF, vF, vSI;
+	vector<string> fDisplay;
+	vector<string> aTransactions;
+	/*
+	0. Money Market			5.Capital Value Fund
+	1. Prime Money Market	6.Growth Equity Fund
+	2. Long-Term Bond		7.Growth Index Fund
+	3. Short-Term Bond		8.Value Fund
+	4. 500 Index Fund		9.Value Stock Index
+	*/
+
+};
+
+//Account implementations
+
+
+
+Account::Account()
+{
+	
+}
+
+Account::~Account()
+{
+
+}
+
+Account::Account(string fName, string lName, int bID, vector<string> &transaction)
+	:firstName(fName), lastName(lName), bankID(bID), aTransactions(transaction)
+{
+	
+}
+
+
+bool Account::CheckID(int bankID) const
+{
+	return (bankID > 9999 && bankID <= 99999);
+}
+
+
+
+//Changes an amount to a fund
+bool Account::ChangeFund(int bankID, int amount)
+{
+	if (CheckID(bankID))
+	{
+		//Finds last digit using modulo
+		int lastDigit = bankID % 10;
+		switch (lastDigit)
+		{
+		case 0:
+			if (mM + amount >= 0)
+			{
+				mM += amount;
+			}
+			//Transfer method
+			//Assumes the amount is negative
+			else if ((mM + amount) < 0 && !((mM + pMM) + amount < 0))
+			{
+				//'Transferring' the fund amounts
+				//given (mM + amount) < 0, cover = 0 - (-some negative)
+				int cover = 0 - (mM + amount);
+				mM = 0;
+				pMM -= cover;
+			}
+			else
+			{
+				errorOutput += "ERROR: Not enough funds to withdraw " + to_string(-amount) + " from " + firstName + " " + lastName
+					+ " Money Market and Prime Money Market.\n";
+				return false;
+			}
+			break;
+			//Same as case 0 but reversed
+		case 1:
+			if (pMM + amount >= 0)
+			{
+				pMM += amount;
+			}
+			//Transfer method
+			else if ((pMM + amount) < 0 && ((pMM + mM) + amount >= 0))
+			{
+				//'Transferring' the fund amounts
+				int cover = 0 - (pMM + amount);
+				pMM = 0;
+				mM -= cover;
+			}
+			else
+			{
+				errorOutput += "ERROR: Not enough funds to withdraw " + to_string(-amount) + " from " + firstName + " " + lastName
+					+ " Money Market and Prime Money Market.\n";
+				return false;
+			}
+			break;
+		case 2:
+			if (lTB + amount >= 0)
+			{
+				lTB += amount;
+			}
+			//Transfer method
+			else if ((lTB + amount) < 0 && ((lTB + sTB) + amount >= 0))
+			{
+				//'Transferrring' the fund amounts
+				int cover = 0 - (lTB + amount);
+				lTB = 0;
+				sTB -= cover;
+			}
+			else
+			{
+				errorOutput += "ERROR: Not enough funds to withdraw " + to_string(-amount) + " from " + firstName + " " + lastName
+					+ " Long-Term Bond and Short-Term Bond.\n";
+				return false;
+			}
+			break;
+		case 3:
+			if (sTB + amount >= 0)
+			{
+				sTB += amount;
+			}
+			//Transfer method
+			else if ((sTB + amount) < 0 && ((sTB + lTB) + amount >= 0))
+			{
+				//'Transferring' the fund amounts
+				int cover = 0 - (sTB + amount);
+				sTB = 0;
+				lTB -= cover;
+			}
+			else
+			{
+				errorOutput += "ERROR: Not enough funds to withdraw " + to_string(-amount) + " from " + firstName + " " + lastName
+					+ " Long-Term Bond and Short-Term Bond.\n";
+				return false;
+			}
+			break;
+		case 4:
+			if (fIF + amount >= 0)
+			{
+				fIF += amount;
+			}
+			else
+			{
+				errorOutput += "ERROR: Not enough funds to withdraw " + to_string(-amount) + " from " + firstName + " " + lastName
+					+ " 500-Index Fund.\n";
+				return false;
+			}
+			break;
+		case 5:
+			if (cVF + amount >= 0)
+			{
+				cVF += amount;
+			}
+			else
+			{	
+				errorOutput += "ERROR: Not enough funds to withdraw " + to_string(-amount) + " from " + firstName + " " + lastName
+					+ " Capital Value Fund.\n";
+				return false;
+			}
+			break;
+		case 6:
+			if (gEF + amount >= 0)
+			{
+				gEF += amount;
+			}
+			else
+			{	
+				errorOutput += "ERROR: Not enough funds to withdraw " + to_string(-amount) + " from " + firstName + " " + lastName
+					+ " Growth Equity Fund.\n";
+				return false;
+			}
+			break;
+		case 7:
+			if (gIF + amount >= 0)
+			{
+				gIF += amount;
+			}
+			else
+			{
+				errorOutput += "ERROR: Not enough funds to withdraw " + to_string(-amount) + " from " + firstName + " " + lastName
+					+ " Growth Index Fund.\n";
+				return false;
+			}
+			break;
+		case 8:
+			if (vF + amount >= 0)
+			{
+				vF += amount;
+			}
+			else
+			{
+				errorOutput += "ERROR: Not enough funds to withdraw " + to_string(-amount) + " from " + firstName + " " + lastName
+					+ " Value Fund.\n";
+				return false;
+			}
+			break;
+		case 9:
+			if (vSI + amount >= 0)
+			{
+				vSI += amount;
+			}
+			else
+			{
+				errorOutput += "ERROR: Not enough funds to withdraw " + to_string(-amount) + " from " + firstName + " " + lastName
+					+ " Value Stock Index.\n";
+				return false;
+			}
+			break;
+		default:
+			errorOutput += "ERROR: Invalid digit\n";
+			return false;
+		}
+		return true;
+	}
+}
+
+//Main Display for fund
+string Account::DisplayFund(int bankID)
+{	
+	string display;
+	if (CheckID(bankID))
+	{
+		vector<string> result;
+		//Make a stream to tokenize each part
+		for (int i = 0; i < fTransactions.size(); i++)
+		{
+			stringstream sStream(fTransactions[i]);
+			//sStream.good() checks if no fail flags are set
+			for (string s; sStream.good() && sStream >> s;)
+			{
+				result.push_back(s);
+			}
+			string process = result[0];
+			int fID = stoi(result[1]);
+			if (process != "O" || process != "H")
+			{
+				if (fID = bankID)
+				{
+					fDisplay.push_back(fTransactions[i]);
+				}
+			}
+		}
+
+			int lastDigit = bankID % 10;
+
+			switch (lastDigit)
+			{
+			case 0:
+				display += getSingleFund(bankID);
+				display += PrintFundVector(bankID);
+				break;
+			case 1:
+				display += getSingleFund(bankID);
+				display += PrintFundVector(bankID);
+				break;
+			case 2:
+				display += getSingleFund(bankID);
+				display += PrintFundVector(bankID);
+				break; 
+			case 3:
+				display += getSingleFund(bankID);
+				display += PrintFundVector(bankID);
+				break;
+			case 4:
+				display += getSingleFund(bankID);
+				display += PrintFundVector(bankID);
+				break;
+			case 5:
+				display += getSingleFund(bankID);
+				display += PrintFundVector(bankID);
+				break;
+			case 6:
+				display += getSingleFund(bankID);
+				display += PrintFundVector(bankID);
+				break;
+			case 7:
+				display += getSingleFund(bankID);
+				display += PrintFundVector(bankID);
+				break;
+			case 8:
+				display += getSingleFund(bankID);
+				display += PrintFundVector(bankID);
+				break;
+			case 9:
+				display += getSingleFund(bankID);
+				display += PrintFundVector(bankID);
+				break;
+			default:
+				errorOutput += "ERROR: Invalid digit\n";
+				break;
+			}
+			display += "\n";
+
+		}
+
+		else
+		{
+			display += getAllFund(bankID);
+		}
+	errorOutput += display;
+	return errorOutput;
+	}
+
+
+string Account::PrintFundVector(int fundID)
+{
+	vector<string> result;
+	string display, total;
+	int fID;
+	for (int i = 0; i < fDisplay.size(); i++)
+	{
+		istringstream iss(fDisplay[i]);
+		iss >> display;
+		iss >> fID;
+		if (display != "O" || display != "H")
+		{
+			if (fundID == fID)
+			{	
+				total += "\t" + fDisplay[i];
+			//	cout << fDisplay[i] << endl;
+			}
+		}
+
+		//Old stringstream
+		//display = fDisplay[i];
+		//stringstream sStream(display);
+		//cout << fDisplay[i] << endl;
+		//	//sStream.good() checks if no fail flags are set
+		//	for (string s; sStream.good() && sStream >> s;)
+		//	{
+		//		result.push_back(s);
+		//	}
+			/*string process = result[0];
+			int fID = stoi(result[1]);
+			cout << "fID: " << fID << endl;
+			if (fundID == stoi(result[1]))
+			{
+				cout << fDisplay[i]<<endl;
+			}*/
+	}
+	return total;
+}
+
+int Account::getBankID() const
+{
+	return bankID;
+}
+
+//Gets the current amount for a single fund
+string Account::getSingleFund(int bankID) const
+{
+	if (CheckID(bankID))
+	{
+		int lastDigit = bankID % 10;
+		string transaction = "Transaction History for " + lastName + " " + firstName + " ";
+		switch (lastDigit)
+		{
+		case 0:
+			return transaction + "Monkey Market: $" + to_string(mM) + "\n";
+			break;
+		case 1:
+			return transaction + "Prime Monkey Market: $" + to_string(pMM) + "\n";
+			break;
+		case 2:
+			return transaction + "Long-Term Bond: $" + to_string(lTB) + "\n";
+			break;
+		case 3:
+			return transaction + "Short-Term Bond: $" + to_string(sTB) + "\n";
+			break;
+		case 4:
+			return transaction + "500-Index Fund: $" + to_string(fIF) + "\n";
+			break;
+		case 5:
+			return transaction + "Capital Value Fund: $" + to_string(cVF) + "\n";
+			break;
+		case 6:
+			return transaction + "Growth Equity Fund: $" + to_string(gEF) + "\n";
+			break;
+		case 7:
+			return transaction + "Growth Index Fund: $" + to_string(gIF) + "\n";
+			break;
+		case 8:
+			return transaction + "Value Fund: $" + to_string(vF) + "\n";
+			break;
+		case 9:
+			return transaction + "Value Stock Index: $" + to_string(vSI) + "\n";
+			break;
+		default:
+			return "Invalid digit";
+			break;
+		}
+
+	}
+}
+
+//Gets the current amount for a fund, modified single fund
+string Account::getFund(int bankID) const
+{
+	if (CheckID(bankID))
+	{
+		int lastDigit = bankID % 10;
+		switch (lastDigit)
+		{
+		case 0:
+			return "Monkey Market: $" + to_string(mM);
+			break;
+		case 1:
+			return "Prime Monkey Market: $" + to_string(pMM);
+			break;
+		case 2:
+			return "Long-Term Bond: $" + to_string(lTB);
+			break;
+		case 3:
+			return "Short-Term Bond: $" + to_string(sTB);
+			break;
+		case 4:
+			return "500-Index Fund: $" + to_string(fIF);
+			break;
+		case 5:
+			return "Capital Value Fund: $" + to_string(cVF);
+			break;
+		case 6:
+			return "Growth Equity Fund: $" + to_string(gEF);
+			break;
+		case 7:
+			return "Growth Index Fund: $" + to_string(gIF);
+			break;
+		case 8:
+			return "Value Fund: $" + to_string(vF);
+			break;
+		case 9:
+			return "Value Stock Index: $" + to_string(vSI);
+			break;
+		default:
+			return "Invalid digit";
+			break;
+		}
+
+	}
+}
+
+string Account::getAllFund(int bankID) const
+{
+	string transaction = "Transaction History for " + lastName + " " + firstName + " by fund.\n";
+	//Placeholder token
+	string process;
+	int fundID, lastDigit;
+	vector<int> checkFund;
+	vector<string> store;
+	bool unique;
+	if (!CheckID(bankID))
+	{
+		
+		for (int i = 0; i < fTransactions.size(); i++)
+		{
+			istringstream iss(fTransactions[i]);
+			iss >> process;
+			iss >> fundID;
+
+			if (process == "D" || process == "W" || process == "T")
+			{
+				//Checking if the actual bank account is equivalent or not
+				if (fundID / 10 == bankID)
+				{	
+					store.push_back(fTransactions[i]);
+				}
+			}
+
+		}
+
+		//Sorts the store into a lexigraphical order
+		//Ideally would sort store based upon second string word
+		sort(store.begin(), store.end());
+
+		for (int i = 0; i < store.size(); i++)
+		{
+			istringstream iss(store[i]);
+			iss >> process;
+			iss >> fundID;
+			unique = true;
+			for (int i = 0; i < checkFund.size(); ++i)
+			{	
+				//Checks for a first time
+				if (checkFund[i] == fundID)
+				{
+					unique = false;
+				}
+			}
+			if (unique)
+			{
+				checkFund.push_back(fundID);
+				transaction += getFund(fundID) + "\n";
+			}
+			transaction += "\t" + store[i] + "\n";
+
+		}
+	}
+
+	else
+	{
+		cerr << "Invalid bankID" << endl;
+	}
+
+	return transaction;
+}
+
+
+string Account::getAccountDetails() const
+{	
+	string details;
+	details += lastName + " " + firstName + " Account ID: " + to_string(bankID)
+		+ "\nMoney Market: $" + to_string(mM)
+		+ "\nPrime Money Market: $" + to_string(pMM)
+		+ "\nLong-Term Bond: $" + to_string(lTB)
+		+ "\nShort-Term Bond: $" + to_string(sTB)
+		+ "\n500-Index Fund: $" + to_string(fIF)
+		+ "\nCapital Value Fund: $" + to_string(cVF)
+		+ "\nGrowth Equity Fund: $" + to_string(gEF)
+		+ "\nGrowth Index Fund: $" + to_string(gIF)
+		+ "\nValue Fund: $" + to_string(vF)
+		+ "\nValue Stock Index: $" + to_string(vSI) + "\n";
+
+	return details;
+}
+
