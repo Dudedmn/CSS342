@@ -1,0 +1,422 @@
+/*
+@author - Daniel Yan
+@date - May 27th
+
+JollyBank class which holds all the bank methods.
+*/
+#pragma once
+#include <string>
+#include <vector>
+#include <queue>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+
+
+
+using namespace std;
+
+class JollyBank
+{
+private:
+	struct Node
+	{
+		Account *pAcct;
+		Node *right;
+		Node *left;
+	};
+
+	
+	Node *root;
+	string firstName, lastName, outDisplay;
+	int bankID;
+
+	queue<string> qTransactions;
+
+public:
+	JollyBank();
+	~JollyBank();
+	void Deposit(int id, int amount);
+	void Withdraw(int id, int amount);
+	void Transfer(int fund1, int amount, int fund2);
+	void History(int id);
+	void OpenAccount(string firstName, string lastName, int bankID, vector<string> &transactions);
+	bool ReadFile(string fileName);
+	bool WriteFile(string fileName);
+	void QueueDisplay();
+	void QueueProcess();
+	void StringParse(string transaction);
+	bool CheckID(int bankID) const;
+	void PrintAllAccounts();
+
+	//BST items
+	bool Insert(Node *&, Account *);
+	// retrieve object, first parameter is the ID of the account
+	// second parameter holds pointer to found object, NULL if not found
+	bool Retrieve(Node *node, const int &, Account * &);
+	// displays the contents of a tree to cout
+	//Note Display is not const as it modified a string
+	void Display(Node *root);
+	void Empty(Node *&root);
+	bool isEmpty() const;
+
+	//Getters
+	int getBankID() const;
+	queue<string> getQueue() const;
+
+};
+
+JollyBank::JollyBank()
+{
+}
+
+JollyBank::~JollyBank()
+{
+
+}
+
+void JollyBank::Deposit(int id, int amount)
+{	
+	//First 4 digits are the actual bankID
+	int bankID = id / 10;
+	Account *toDeposit;
+	//Parameter return by reference
+	Retrieve(root, bankID, toDeposit);
+	//ChangeFund parses a 5 digit ID
+	toDeposit->ChangeFund(id, amount);
+	toDeposit->fTransactions.push_back("D " + to_string(id) + " " + to_string(amount));
+	//cout << id << " " << amount << endl;
+
+}
+
+void JollyBank::Withdraw(int id, int amount)
+{
+	int bankID = id / 10;
+	Account *toWithdraw;
+	//Parameter return by reference
+	Retrieve(root, bankID, toWithdraw);
+	//ChangeFund parses a 5 digit ID
+	if (toWithdraw->ChangeFund(id, -amount))
+	{
+		toWithdraw->fTransactions.push_back("W " + to_string(id) + " " + to_string(amount));
+		//cout << id << " " << amount << endl;
+	}
+
+	else
+	{
+		toWithdraw->fTransactions.push_back("W " + to_string(id) + " " + to_string(amount) + " (failed)");
+		//cout << id << " " << amount << " (failed)" << endl;
+	}
+
+
+}
+
+void JollyBank::Transfer(int fund1, int amount, int fund2)
+{
+	//This uses a pseudo-transfer by calling ChangeFund twice
+	//Either fund can be used as they should be same fund
+	//Fund order is fund is taken from first fund to second fund
+
+	//Makes temporary accounts which serves as checks
+	int bankID = fund1 / 10, bankID2 = fund2 / 10;
+	Account *check1, *check2;
+	bool ret1 = Retrieve(root, bankID, check1), ret2 = Retrieve(root, bankID2, check2);
+	
+	//If both funds are valid then do the transfer
+	if (ret1 && ret2)
+	{
+		Account *toTransfer;
+		//Parameter return by reference
+		Retrieve(root, bankID, toTransfer);
+		//ChangeFund parses a 5 digit ID, handles funding from special funds
+		//Note this takes a negative amount from the first fund
+		toTransfer->ChangeFund(fund1, -amount);
+		//Transfers the positive amount to the second fund
+		toTransfer->ChangeFund(fund2, amount);
+		toTransfer->fTransactions.push_back("T " + to_string(fund1) + " " + to_string(amount) + to_string(fund2));
+		//cout << fund1 << " " << amount << " " << fund2 << endl;
+	}
+
+}
+
+void JollyBank::History(int id)
+{
+	string totalHistory;
+	Account *toDisplay;
+	if (CheckID(id))
+	{
+		int bankID = id / 10;
+		bool found = Retrieve(root, bankID, toDisplay);
+		if (found)
+		{
+			totalHistory += toDisplay->DisplayFund(id);
+		}
+		else
+		{
+			outDisplay += "ERROR: Account ID: " + to_string(id) + " was not found.\n";
+		}
+
+	}
+
+	else
+	{	
+		if (Retrieve(root, id, toDisplay))
+		{
+			totalHistory += toDisplay->DisplayFund(id);
+		}
+		else
+		{
+			outDisplay += "ERROR: Account ID: " + to_string(id) + " was not found.\n";
+		}
+	}
+	outDisplay += totalHistory;
+
+}
+
+void JollyBank::OpenAccount(string firstName, string lastName, int bankID, vector<string> &transactions)
+{	
+	
+	Account *a = new Account(firstName, lastName, bankID, transactions);
+	Insert(root, a);
+	//cout << firstName << " " << lastName << " " << bankID << endl;
+
+}
+
+
+//Displays all elements in a queue without removal
+void JollyBank::QueueDisplay()
+{
+	queue<string> temp;
+	while (!qTransactions.empty())
+	{
+		cout << qTransactions.front() << endl;
+		temp.push(qTransactions.front());
+		qTransactions.pop();
+	}
+
+	while (!temp.empty())
+	{
+		qTransactions.push(temp.front());
+		temp.pop();
+	}
+}
+
+void JollyBank::QueueProcess()
+{
+
+	string parse;
+	while (!qTransactions.empty())
+	{
+		parse = qTransactions.front();
+		qTransactions.pop();
+		//Copy queue for account vector
+		StringParse(parse);
+	}
+}
+
+void JollyBank::StringParse(string transaction)
+{
+	vector<string> result;
+	//Make a stream to tokenize each part
+	stringstream sStream(transaction);
+	//sStream.good() checks if no fail flags are set
+	for (string s; sStream.good() && sStream >> s;)
+	{
+		result.push_back(s);
+	}
+
+	
+	string process = result.front();
+	if (process == "O")
+	{	
+		//Use the main queue to create a personalized vector for each account
+		vector<string> aTransactions;
+		//The vector holds the master list  of the queue
+		queue<string> temp;
+		while (!qTransactions.empty())
+		{
+			aTransactions.push_back(qTransactions.front());
+			temp.push(qTransactions.front());
+			qTransactions.pop();
+		}
+		//This allows the main queue to still be relevant for multiple opened accounts
+		qTransactions = temp;
+		OpenAccount(result[1], result[2], stoi(result[3]), aTransactions);
+	}
+
+	else if (process == "D")
+	{
+		Deposit(stoi(result[1]), stoi(result[2]));
+	}
+
+	else if (process == "W")
+	{
+
+		Withdraw(stoi(result[1]), stoi(result[2]));
+	}
+
+	else if (process == "T")
+	{
+		Transfer(stoi(result[1]), stoi(result[2]), stoi(result[3]));
+	}
+
+	else if (process == "H")
+	{	
+		History(stoi(result[1]));
+	}
+
+	else
+	{
+		outDisplay += "ERROR: Invalid process.\n";
+	}
+}
+
+
+bool JollyBank::ReadFile(string fName)
+{
+	ifstream inFile;
+
+	inFile.open(fName);
+	if (inFile.is_open())
+	{
+		string item;
+		while (!inFile.eof())
+		{
+			//Gets entire line as a string
+			getline(inFile, item);
+			//Pushes each transaction line into the queue
+			qTransactions.push(item);
+		}
+		inFile.close();
+	}
+	else
+	{
+		cout << "File: " << fName << "not found" << endl;
+	}
+	return true;
+}
+
+bool JollyBank::WriteFile(string fName)
+{
+	ofstream outFile;
+	outFile.open(fName);
+	outFile << outDisplay << endl;
+	outFile.close();
+	Empty(root);
+	return true;
+}
+bool JollyBank::CheckID(int bankID) const
+{
+	return (bankID > 9999 && bankID <= 99999);
+}
+
+
+int JollyBank::getBankID() const
+{
+	return bankID;
+}
+
+queue<string> JollyBank::getQueue() const
+{
+	//Return a local copy
+	return qTransactions;
+}
+
+void JollyBank::PrintAllAccounts() 
+{
+	outDisplay += "\nProcessing Done. Final balances\n";
+	Display(root);
+	cout << outDisplay;
+}
+
+//BStree
+bool JollyBank::Insert(Node *& node, Account *acc)
+{
+	if (!node || node == NULL)
+	{
+		node = new Node();
+		node->pAcct = acc;
+		node->left = node->right = NULL;
+		return true;
+	}
+	if (node->pAcct->getBankID() == acc->getBankID())
+	{
+		outDisplay += "ERROR: Account " + to_string(acc->getBankID()) + " is already open.\n";
+		return false;
+	}
+	//If inserted account's id is less than root go left
+	else if (node->pAcct->getBankID() > acc->getBankID())
+	{
+		Insert(node->left, acc);
+	}
+	else if (node->pAcct->getBankID() < acc->getBankID())
+	{
+		Insert(node->right, acc);
+	}
+
+	return false;
+}
+
+bool JollyBank::Retrieve(Node *node, const int &id, Account *&acc)
+{
+	if (node->pAcct->getBankID() == id)
+	{
+		acc = node->pAcct;
+		return true;
+	}
+	bool found = false;
+	if (node->left != NULL)
+	{
+		//Set found to whatever boolean from retrieve
+		found = Retrieve(node->left, id, acc);
+	}
+	if (found)
+		return true;
+	if (node->right != NULL)
+	{
+		found = Retrieve(node->right, id, acc);
+	}
+	if (!found)
+	{
+		outDisplay += "ERROR: Account " + to_string(id) + " not found. Transaction refused.\n";
+	}
+	return found;
+	
+}
+
+void JollyBank::Display(Node *node) 
+{
+		if(node->left != NULL)
+			Display(node->left);
+		outDisplay += node->pAcct->getAccountDetails() + "\n";
+		if(node->right != NULL)
+			Display(node->right);
+	
+}
+
+void JollyBank::Empty(Node *&root)
+{
+	if (root != NULL)
+	{
+		if (root->left != NULL)
+		{
+			Empty(root->left);
+		}
+		if (root->right != NULL)
+		{
+			Empty(root->right);
+		}
+
+		delete(root);
+	}
+}
+
+bool JollyBank::isEmpty() const
+{
+	if (root == NULL)
+	{
+		return true;
+	}
+
+	return false;
+}
